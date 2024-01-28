@@ -21,7 +21,7 @@ import in.succinct.beckn.Order.Return.ReturnStatus;
 import in.succinct.beckn.Order.Status;
 import in.succinct.beckn.Quantity;
 import in.succinct.beckn.Request;
-import in.succinct.bpp.core.adaptor.NetworkApiAdaptor;
+import in.succinct.bpp.core.adaptor.api.NetworkApiAdaptor;
 
 import in.succinct.bpp.core.db.model.LocalOrderSynchronizer;
 import in.succinct.bpp.core.db.model.LocalOrderSynchronizerFactory;

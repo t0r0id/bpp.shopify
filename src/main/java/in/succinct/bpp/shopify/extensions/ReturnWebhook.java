@@ -10,7 +10,7 @@ import in.succinct.beckn.Order.Return;
 import in.succinct.beckn.Order.Return.ReturnStatus;
 import in.succinct.beckn.Request;
 import in.succinct.beckn.ReturnReasons.ReturnRejectReason;
-import in.succinct.bpp.core.adaptor.NetworkApiAdaptor;
+import in.succinct.bpp.core.adaptor.api.NetworkApiAdaptor;
 import in.succinct.bpp.core.db.model.LocalOrderSynchronizer;
 import in.succinct.bpp.core.db.model.LocalOrderSynchronizerFactory;
 import in.succinct.bpp.shopify.adaptor.ECommerceAdaptor;

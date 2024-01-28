@@ -13,7 +13,7 @@ import in.succinct.beckn.Order.Orders;
 import in.succinct.beckn.Order.ReconStatus;
 import in.succinct.beckn.Order.Status;
 import in.succinct.beckn.Request;
-import in.succinct.bpp.core.adaptor.NetworkApiAdaptor;
+import in.succinct.bpp.core.adaptor.api.NetworkApiAdaptor;
 import in.succinct.bpp.core.db.model.LocalOrderSynchronizer;
 import in.succinct.bpp.core.db.model.LocalOrderSynchronizerFactory;
 import in.succinct.bpp.core.db.model.rsp.Settlement;
