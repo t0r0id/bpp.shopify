@@ -11,13 +11,13 @@ import com.venky.swf.plugins.background.core.DbTask;
 import com.venky.swf.plugins.background.core.TaskManager;
 import com.venky.swf.routing.Config;
 import in.succinct.bpp.core.adaptor.CommerceAdaptor;
-import in.succinct.bpp.core.adaptor.NetworkAdaptor;
+
 import in.succinct.bpp.shopify.adaptor.ECommerceAdaptor;
+import in.succinct.onet.core.adaptor.NetworkAdaptor;
 
 import javax.crypto.Mac;
 import javax.crypto.spec.SecretKeySpec;
 import java.nio.charset.StandardCharsets;
-import java.util.Base64;
 import java.util.Map;
 
 public abstract class ShopifyWebhook implements Extension {

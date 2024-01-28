@@ -1,13 +1,10 @@
 package in.succinct.bpp.shopify.extensions;
 
-import com.venky.cache.Cache;
 import com.venky.core.util.ObjectHolder;
 import com.venky.extension.Extension;
 import com.venky.extension.Registry;
 import com.venky.swf.plugins.beckn.messaging.Subscriber;
 import in.succinct.bpp.core.adaptor.CommerceAdaptor;
-
-import in.succinct.bpp.core.adaptor.NetworkAdaptor;
 import in.succinct.bpp.shopify.adaptor.ECommerceAdaptor;
 
 import java.util.HashMap;

@@ -1,24 +1,22 @@
 package in.succinct.bpp.shopify.extensions;
 
 import com.venky.core.string.StringUtil;
-import com.venky.core.util.ObjectUtil;
 import com.venky.extension.Registry;
 import com.venky.swf.path.Path;
 import in.succinct.beckn.Context;
-import in.succinct.beckn.Descriptor;
-import in.succinct.beckn.Fulfillment.FulfillmentStatus;
 import in.succinct.beckn.Message;
 import in.succinct.beckn.Order;
 import in.succinct.beckn.Order.Return;
 import in.succinct.beckn.Order.Return.ReturnStatus;
 import in.succinct.beckn.Request;
 import in.succinct.beckn.ReturnReasons.ReturnRejectReason;
-import in.succinct.bpp.core.adaptor.NetworkAdaptor;
+import in.succinct.bpp.core.adaptor.NetworkApiAdaptor;
 import in.succinct.bpp.core.db.model.LocalOrderSynchronizer;
 import in.succinct.bpp.core.db.model.LocalOrderSynchronizerFactory;
 import in.succinct.bpp.shopify.adaptor.ECommerceAdaptor;
 import in.succinct.bpp.shopify.adaptor.ECommerceAdaptor.ReturnDecline;
 import in.succinct.bpp.shopify.model.ShopifyOrder;
+import in.succinct.onet.core.adaptor.NetworkAdaptor;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 
@@ -30,7 +28,7 @@ public class ReturnWebhook extends ShopifyWebhook {
         Registry.instance().registerExtension("in.succinct.bpp.shell.return_hook",new ReturnWebhook());
     }
 
-    public void hook(ECommerceAdaptor eCommerceAdaptor, NetworkAdaptor networkAdaptor,Path path, String payload) {
+    public void hook(ECommerceAdaptor eCommerceAdaptor, NetworkAdaptor networkAdaptor, Path path, String payload) {
         String event = path.parameter();
         /*if (ObjectUtil.equals(path.getHeaders().get("X-Shopify-Topic"),"returns/request")) {
             event = "on_update"; // If On_update is delayed.!!
@@ -113,6 +111,6 @@ public class ReturnWebhook extends ShopifyWebhook {
         request.getMessage().setOrder(finalOrder); //updated order.
 
 
-        networkAdaptor.getApiAdaptor().callback(eCommerceAdaptor,request);
+        ((NetworkApiAdaptor)networkAdaptor.getApiAdaptor()).callback(eCommerceAdaptor,request);
     }
 }

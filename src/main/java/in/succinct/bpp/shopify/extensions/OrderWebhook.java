@@ -13,13 +13,14 @@ import in.succinct.beckn.Order.Orders;
 import in.succinct.beckn.Order.ReconStatus;
 import in.succinct.beckn.Order.Status;
 import in.succinct.beckn.Request;
-import in.succinct.bpp.core.adaptor.NetworkAdaptor;
+import in.succinct.bpp.core.adaptor.NetworkApiAdaptor;
 import in.succinct.bpp.core.db.model.LocalOrderSynchronizer;
 import in.succinct.bpp.core.db.model.LocalOrderSynchronizerFactory;
 import in.succinct.bpp.core.db.model.rsp.Settlement;
 import in.succinct.bpp.shopify.adaptor.ECommerceAdaptor;
 import in.succinct.bpp.shopify.model.ShopifyOrder;
 import in.succinct.bpp.shopify.model.ShopifyOrder.ShopifyRefund;
+import in.succinct.onet.core.adaptor.NetworkAdaptor;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
 
@@ -32,7 +33,7 @@ public class OrderWebhook extends ShopifyWebhook{
         Registry.instance().registerExtension("in.succinct.bpp.shell.order_hook",new OrderWebhook());
     }
 
-    public void hook(ECommerceAdaptor eCommerceAdaptor, NetworkAdaptor networkAdaptor,Path path, String payload) {
+    public void hook(ECommerceAdaptor eCommerceAdaptor, NetworkAdaptor networkAdaptor, Path path, String payload) {
         String event = path.parameter();
 
         JSONObject eOrder = (JSONObject) JSONValue.parse(payload);
@@ -120,7 +121,7 @@ public class OrderWebhook extends ShopifyWebhook{
                     becknOrder.setCounterpartyDiffAmount(null);
                 }
             }
-            networkAdaptor.getApiAdaptor().callback(eCommerceAdaptor,on_receiver_recon);
+            ((NetworkApiAdaptor)networkAdaptor.getApiAdaptor()).callback(eCommerceAdaptor,on_receiver_recon);
 
         }
 
@@ -139,6 +140,6 @@ public class OrderWebhook extends ShopifyWebhook{
         //Send unsolicited on_status.
         context.setMessageId(UUID.randomUUID().toString());
         context.setTimestamp(becknOrder.getUpdatedAt());
-        networkAdaptor.getApiAdaptor().callback(eCommerceAdaptor,request);
+        ((NetworkApiAdaptor)networkAdaptor.getApiAdaptor()).callback(eCommerceAdaptor,request);
     }
 }

@@ -94,8 +94,6 @@ import in.succinct.beckn.Time;
 import in.succinct.beckn.Time.Range;
 import in.succinct.beckn.User;
 import in.succinct.bpp.core.adaptor.TimeSensitiveCache;
-import in.succinct.bpp.core.adaptor.api.BecknIdHelper;
-import in.succinct.bpp.core.adaptor.api.BecknIdHelper.Entity;
 import in.succinct.bpp.core.adaptor.fulfillment.FulfillmentStatusAdaptor;
 import in.succinct.bpp.core.adaptor.fulfillment.FulfillmentStatusAdaptor.FulfillmentStatusAudit;
 import in.succinct.bpp.core.db.model.LocalOrderSynchronizer;
@@ -117,8 +115,6 @@ import in.succinct.bpp.shopify.model.ShopifyOrder;
 import in.succinct.bpp.shopify.model.ShopifyOrder.LineItem;
 import in.succinct.bpp.shopify.model.ShopifyOrder.LineItems;
 import in.succinct.bpp.shopify.model.ShopifyOrder.NoteAttributes;
-import in.succinct.bpp.shopify.model.ShopifyOrder.OrderAdjustment;
-import in.succinct.bpp.shopify.model.ShopifyOrder.OrderAdjustments;
 import in.succinct.bpp.shopify.model.ShopifyOrder.ShippingLine;
 import in.succinct.bpp.shopify.model.ShopifyOrder.ShopifyRefund;
 import in.succinct.bpp.shopify.model.ShopifyOrder.ShopifyRefund.RefundLineItem;
@@ -129,6 +125,8 @@ import in.succinct.bpp.shopify.model.ShopifyOrder.Transaction;
 import in.succinct.bpp.shopify.model.ShopifyOrder.Transactions;
 import in.succinct.bpp.shopify.model.Store;
 import in.succinct.json.JSONAwareWrapper;
+import in.succinct.onet.core.api.BecknIdHelper;
+import in.succinct.onet.core.api.BecknIdHelper.Entity;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 
@@ -145,6 +143,7 @@ import java.util.Objects;
 import java.util.Set;
 import java.util.UUID;
 
+@SuppressWarnings("unchecked")
 public class ECommerceAdaptor extends SearchAdaptor {
     final ECommerceSDK helper;
     final TimeSensitiveCache cache = new TimeSensitiveCache(Duration.ofDays(1));
@@ -178,8 +177,8 @@ public class ECommerceAdaptor extends SearchAdaptor {
         Fulfillment f = bo.getFulfillment();
         Location storeLocation = bo.getProviderLocation();
 
-        Serviceability serviceability = f.getEnd() == null ? null : getProviderConfig().getServiceability(f.getType(), f.getEnd(), storeLocation);
-        if (serviceability != null && !serviceability.isServiceable()) {
+        Serviceability serviceability = getProviderConfig().getServiceability(f.getType(), f.getEnd(), storeLocation);
+        if (!serviceability.isServiceable()) {
             throw serviceability.getReason();
         }
 
@@ -218,7 +217,7 @@ public class ECommerceAdaptor extends SearchAdaptor {
         Bucket tax = new Bucket();
         shopifyOrder.setLocationId(Long.parseLong(BecknIdHelper.getLocalUniqueId(getProviderConfig().getLocation().getId(), Entity.provider_location)));
 
-        if (serviceability != null) {
+        {
             ShippingLine shippingLine = new ShippingLine();
             shippingLine.setTitle("Standard");
             shippingLine.setPrice(serviceability.getCharges());
@@ -250,7 +249,7 @@ public class ECommerceAdaptor extends SearchAdaptor {
 
         if (bo.getItems() != null) {
             bo.getItems().forEach(boItem -> {
-                in.succinct.bpp.search.db.model.Item dbItem = getItem(boItem.getId());
+                in.succinct.catalog.indexer.db.model.Item dbItem = getItem(boItem.getId());
                 if (dbItem == null) {
                     return;
                 }
@@ -341,11 +340,11 @@ public class ECommerceAdaptor extends SearchAdaptor {
         draftOrder.rm("id");
     }
 
-    private in.succinct.bpp.search.db.model.Item getItem(String objectId) {
+    private in.succinct.catalog.indexer.db.model.Item getItem(String objectId) {
 
-        Select select = new Select().from(in.succinct.bpp.search.db.model.Item.class);
-        List<in.succinct.bpp.search.db.model.Item> dbItems = select.where(new Expression(select.getPool(), Conjunction.AND).
-                add(new Expression(select.getPool(), "APPLICATION_ID", Operator.EQ, getApplication().getId())).
+        Select select = new Select().from(in.succinct.catalog.indexer.db.model.Item.class);
+        List<in.succinct.catalog.indexer.db.model.Item> dbItems = select.where(new Expression(select.getPool(), Conjunction.AND).
+                add(new Expression(select.getPool(), "SUBSCRIBER_ID", Operator.EQ, getSubscriber().getSubscriberId())).
                 add(new Expression(select.getPool(), "OBJECT_ID", Operator.EQ, objectId))).execute(1);
 
         return dbItems.isEmpty() ? null : dbItems.get(0);
@@ -499,7 +498,7 @@ public class ECommerceAdaptor extends SearchAdaptor {
             } else if (inOrder.getPayment().getCollectedBy() == CollectedBy.BPP) {
                 JSONObject metaField = new JSONObject();
                 metaField.put("key", "cod");
-                metaField.put("namespace", "ondc");
+                metaField.put("namespace", getProviderConfig().getMetaNamespace());
                 metaField.put("ownerId", "gid://shopify/Order/" + shopifyOrderId);
                 metaField.put("value", "true");
 
@@ -741,6 +740,9 @@ public class ECommerceAdaptor extends SearchAdaptor {
                 location.getAddress().setPinCode((String) store.get("zip"));
                 location.getAddress().setCountry((String) store.get("country"));
                 location.getAddress().setState((String) store.get("province"));
+                if (ObjectUtil.isVoid(location.getAddress().getState())){
+                    location.getAddress().setState(getProviderConfig().getLocation().getAddress().getState());
+                }
                 /* TODO
                 location.setCity(new in.succinct.beckn.City());
                 location.getCity().setCode(location.getAddress().getCity());
@@ -851,9 +853,11 @@ public class ECommerceAdaptor extends SearchAdaptor {
                     item.setHsnCode(inventoryItem.getHarmonizedSystemCode());
                     item.setTaxRate(taxRateMap.get(inventoryItem.getHarmonizedSystemCode()));
                     if (inventoryItem.getCountryCodeOfOrigin() == null) {
-                        return;
+                        //If no custom information is set, then assume store's country  as the origin of the product.
+                        item.setCountryOfOrigin(Country.findByISO(getProviderLocations().get(0).getAddress().getCountry()).getIsoCode());
+                    }else {
+                        item.setCountryOfOrigin(Country.findByISO(inventoryItem.getCountryCodeOfOrigin()).getIsoCode());
                     }
-                    item.setCountryOfOrigin(Country.findByISO(inventoryItem.getCountryCodeOfOrigin()).getIsoCode());
                     item.setVeg(product.isVeg());
 
 
@@ -1720,7 +1724,7 @@ public class ECommerceAdaptor extends SearchAdaptor {
     }
     private Item createItemFromECommerceLineItem(LineItem eCommerceLineItem, Map<String, RefundLineItems> refundedMap, Returns returns, Refunds refunds, String fulfillmentId, int overrideLineQuantity) {
         Item unitItem = new Item();
-        in.succinct.bpp.search.db.model.Item dbItem = getItem(BecknIdHelper.getBecknId(String.valueOf(eCommerceLineItem.getVariantId()), getSubscriber(), Entity.item));
+        in.succinct.catalog.indexer.db.model.Item dbItem = getItem(BecknIdHelper.getBecknId(String.valueOf(eCommerceLineItem.getVariantId()), getSubscriber(), Entity.item));
         if (dbItem == null) {
             throw new SellerException.ItemNotFound();
         }

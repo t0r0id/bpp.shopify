@@ -21,9 +21,8 @@ import in.succinct.beckn.Order.Return.ReturnStatus;
 import in.succinct.beckn.Order.Status;
 import in.succinct.beckn.Quantity;
 import in.succinct.beckn.Request;
-import in.succinct.bpp.core.adaptor.NetworkAdaptor;
-import in.succinct.bpp.core.adaptor.api.BecknIdHelper;
-import in.succinct.bpp.core.adaptor.api.BecknIdHelper.Entity;
+import in.succinct.bpp.core.adaptor.NetworkApiAdaptor;
+
 import in.succinct.bpp.core.db.model.LocalOrderSynchronizer;
 import in.succinct.bpp.core.db.model.LocalOrderSynchronizerFactory;
 import in.succinct.bpp.shopify.adaptor.ECommerceAdaptor;
@@ -31,6 +30,9 @@ import in.succinct.bpp.shopify.model.ShopifyOrder;
 import in.succinct.bpp.shopify.model.ShopifyOrder.LineItem;
 import in.succinct.bpp.shopify.model.ShopifyOrder.Transaction;
 import in.succinct.bpp.shopify.model.ShopifyOrder.Transactions;
+import in.succinct.onet.core.adaptor.NetworkAdaptor;
+import in.succinct.onet.core.api.BecknIdHelper;
+import in.succinct.onet.core.api.BecknIdHelper.Entity;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.JSONValue;
@@ -43,7 +45,7 @@ public class RefundWebhook extends ShopifyWebhook {
         Registry.instance().registerExtension("in.succinct.bpp.shell.refund_hook",new RefundWebhook());
     }
 
-    public void hook(ECommerceAdaptor eCommerceAdaptor, NetworkAdaptor networkAdaptor,Path path, String payload) {
+    public void hook(ECommerceAdaptor eCommerceAdaptor, NetworkAdaptor networkAdaptor, Path path, String payload) {
         String event = path.parameter();
 
 
@@ -197,6 +199,6 @@ public class RefundWebhook extends ShopifyWebhook {
 
         //Fill any other attributes needed.
         //Send unsolicited on_status.'
-        networkAdaptor.getApiAdaptor().callback(eCommerceAdaptor,request);
+        ((NetworkApiAdaptor)networkAdaptor.getApiAdaptor()).callback(eCommerceAdaptor,request);
     }
 }
