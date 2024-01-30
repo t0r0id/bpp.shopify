@@ -1765,16 +1765,20 @@ public class ECommerceAdaptor extends SearchAdaptor {
         if (payment.getCollectedBy() == null) {
             if (getProviderConfig().isCodSupported()) {
                 payment.setCollectedBy(CollectedBy.BPP);
-                payment.setType(PaymentType.POST_FULFILLMENT);
+                payment.setType(PaymentType.PRE_FULFILLMENT);
             } else {
                 payment.setCollectedBy(CollectedBy.BAP);
                 payment.setType(PaymentType.ON_ORDER);
             }
         } else if (payment.getCollectedBy() == CollectedBy.BPP && getProviderConfig().isCodSupported()) {
-            payment.setType(PaymentType.POST_FULFILLMENT);
+            payment.setType(PaymentType.PRE_FULFILLMENT);
         } else {
             payment.setCollectedBy(CollectedBy.BAP);
             payment.setType(PaymentType.ON_ORDER);
+        }
+        if (ObjectUtil.equals(payment.getCollectedBy(),CollectedBy.BPP) && !eCommerceOrder.isPaid()){
+            payment.setTlMethod("http/get");
+            payment.setUri("https://google.com/search?q=Stripe%20Not%20Yet%20Implemented");
         }
         // Part of RSP Protocol!
         payment.setCollectedByStatus(NegotiationStatus.Agree);
