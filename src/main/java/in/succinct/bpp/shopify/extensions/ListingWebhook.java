@@ -68,6 +68,7 @@ public class ListingWebhook extends ShopifyWebhook {
         context.setTimestamp(new Date());
         context.setNetworkId(networkAdaptor.getId());
         context.setCity(adaptor.getSubscriber().getCity());
+        context.setAction("on_search");
         context.setTtl(60);
         for (in.succinct.beckn.Provider provider : providers){
             provider.setTag("general_attributes","catalog.indexer.reset","N");
