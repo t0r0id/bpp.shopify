@@ -69,6 +69,7 @@ import in.succinct.beckn.Payment.Params;
 import in.succinct.beckn.Payment.PaymentStatus;
 import in.succinct.beckn.Payment.PaymentType;
 import in.succinct.beckn.Payment.SettlementBasis;
+import in.succinct.beckn.Payments;
 import in.succinct.beckn.Person;
 import in.succinct.beckn.Price;
 import in.succinct.beckn.Provider;
@@ -417,14 +418,21 @@ public class ECommerceAdaptor extends SearchAdaptor {
         target.setShippingAddress(shipping);
 
         User user = source.getCustomer();
+
         Address address = source.getEnd().getLocation().getAddress();
-        if (user == null && address != null) {
-            user = new User();
-            user.setPerson(new Person());
-            user.getPerson().setName(address.getName());
+        if (address != null) {
+            if (user == null ) {
+                user = new User();
+            }
+            if (user.getPerson() == null) {
+                user.setPerson(new Person());
+            }
+            if (ObjectUtil.isVoid(user.getPerson().getName())) {
+                user.getPerson().setName(address.getName());
+            }
         }
 
-        if (user != null) {
+        if (user != null && !ObjectUtil.isVoid(user.getPerson().getName())) {
             String[] parts = user.getPerson().getName().split(" ");
             shipping.setName(user.getPerson().getName());
             shipping.setFirstName(parts[0]);
@@ -710,7 +718,6 @@ public class ECommerceAdaptor extends SearchAdaptor {
     public String getSupportEmail() {
         return getStore().getSupportEmail();
     }
-
 
     @Override
     public Locations getProviderLocations() {
@@ -1402,8 +1409,13 @@ public class ECommerceAdaptor extends SearchAdaptor {
             shipping = eCommerceOrder.getBillingAddress();
         }
 
+        String location_id = BecknIdHelper.getBecknId(StringUtil.valueOf(eCommerceOrder.getLocationId()), getSubscriber(), Entity.provider_location);
+        /*
         Locations locations = getProviderLocations();
-        Location providerLocation = locations.get(BecknIdHelper.getBecknId(StringUtil.valueOf(eCommerceOrder.getLocationId()), getSubscriber(), Entity.provider_location));
+        Location providerLocation = locations.get(location_id);
+
+         */
+        Location providerLocation = new Location();providerLocation.setId(location_id);
         order.setProviderLocation(providerLocation);
 
         fulfillment.setFulfillmentStatus(eCommerceOrder.getFulfillmentStatus());
@@ -1465,9 +1477,12 @@ public class ECommerceAdaptor extends SearchAdaptor {
 
         order.setProvider(new Provider());
         order.getProvider().setId(getSubscriber().getSubscriberId());
+        /*
         order.getProvider().setDescriptor(new Descriptor());
         order.getProvider().getDescriptor().setName(getProviderConfig().getStoreName());
         order.getProvider().setCategoryId(getProviderConfig().getCategory().getId());
+
+         */
         order.getProvider().setLocations(new Locations());
         order.getProvider().getLocations().add(order.getProviderLocation());
 
@@ -1778,7 +1793,7 @@ public class ECommerceAdaptor extends SearchAdaptor {
         }
         if (ObjectUtil.equals(payment.getCollectedBy(),CollectedBy.BPP) && !eCommerceOrder.isPaid()){
             payment.setTlMethod("http/get");
-            payment.setUri("https://google.com/search?q=Stripe%20Not%20Yet%20Implemented");
+            payment.setUri(Config.instance().getServerBaseUrl()+"/html/payment.html");
         }
         // Part of RSP Protocol!
         payment.setCollectedByStatus(NegotiationStatus.Agree);

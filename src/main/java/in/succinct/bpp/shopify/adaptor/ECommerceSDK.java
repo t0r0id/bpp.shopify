@@ -32,6 +32,10 @@ public class ECommerceSDK {
     public ECommerceSDK(ECommerceAdaptor adaptor){
         this.adaptor = adaptor;
         this.application = adaptor == null ? null : ApplicationUtil.find(adaptor.getSubscriber().getAppId());
+        this.ensureCustomizationsPresent();
+    }
+    private void ensureCustomizationsPresent(){
+
     }
     public ECommerceSDK(){
         this(null);
