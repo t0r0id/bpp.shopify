@@ -185,7 +185,7 @@ public class ECommerceAdaptor extends SearchAdaptor {
 
         shopifyOrder.setId(LocalOrderSynchronizerFactory.getInstance().getLocalOrderSynchronizer(getSubscriber()).getLocalOrderId(request.getContext().getTransactionId()));
 
-        shopifyOrder.setCurrency("INR");
+        shopifyOrder.setCurrency(getCurrency());
         shopifyOrder.setSourceName("beckn");
         shopifyOrder.setName("beckn-" + request.getContext().getTransactionId());
         shopifyOrder.setNoteAttributes(new NoteAttributes());
@@ -904,17 +904,17 @@ public class ECommerceAdaptor extends SearchAdaptor {
                     item.setPrice(price);
                     price.setMaximumValue(variant.getMrp());
                     price.setListedValue(variant.getPrice());
-                    price.setCurrency(getStore().getCurrency());
+                    price.setCurrency(getCurrency());
                     price.setValue(variant.getPrice());
                     price.setOfferedValue(variant.getPrice());
                     if (doubleTypeConverter.valueOf(price.getMaximumValue()) < doubleTypeConverter.valueOf(price.getValue())) {
                         price.setMaximumValue(price.getValue());
                     }
-                    price.setCurrency("INR");
+                    price.setCurrency(getCurrency());
 
                     double taxRate = Database.getJdbcTypeHelper("").getTypeRef(double.class).getTypeConverter().valueOf(item.getTaxRate()) / 100.0;
                     Price unitTax = new Price();
-                    unitTax.setCurrency("INR");
+                    unitTax.setCurrency(getCurrency());
                     double factor = isTaxIncludedInPrice() ? (taxRate / (1 + taxRate)) : taxRate;
 
                     unitTax.setValue(factor * item.getPrice().getValue());
@@ -1526,8 +1526,8 @@ public class ECommerceAdaptor extends SearchAdaptor {
         quote.setBreakUp(new BreakUp());
 
         Fulfillment fulfillment = order.getFulfillment();
-        Price shippingPrice = new Price();shippingPrice.setCurrency("INR"); shippingPrice.setValue(0.0);
-        Price shippingTaxes = new Price();shippingTaxes.setCurrency("INR");shippingTaxes.setValue(0.0);
+        Price shippingPrice = new Price();shippingPrice.setCurrency(getCurrency()); shippingPrice.setValue(0.0);
+        Price shippingTaxes = new Price();shippingTaxes.setCurrency(getCurrency());shippingTaxes.setValue(0.0);
         if (eCommerceOrder.getShippingLine() != null) {
             shippingPrice.setValue(eCommerceOrder.getShippingLine().getPrice());
             TaxLines taxLines = eCommerceOrder.getShippingLine().getTaxLines();
@@ -1804,7 +1804,7 @@ public class ECommerceAdaptor extends SearchAdaptor {
 
         if (payment.getParams() == null) {
             payment.setParams(new Params());
-            payment.getParams().setCurrency(getStore().getCurrency());
+            payment.getParams().setCurrency(getCurrency());
         }
         if (eCommerceOrder.getPaymentTerms() != null) {
             payment.getParams().setAmount(doubleTypeConverter.valueOf(eCommerceOrder.getPaymentTerms().getAmount()));
@@ -2298,5 +2298,8 @@ public class ECommerceAdaptor extends SearchAdaptor {
     }
 
 
-
+    @Override
+    public String getCurrency() {
+        return ObjectUtil.isVoid(getStore().getCurrency()) ? super.getCurrency() : getStore().getCurrency();
+    }
 }
