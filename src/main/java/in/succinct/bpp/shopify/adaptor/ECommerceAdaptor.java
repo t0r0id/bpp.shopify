@@ -97,6 +97,7 @@ import in.succinct.beckn.User;
 import in.succinct.bpp.core.adaptor.TimeSensitiveCache;
 import in.succinct.bpp.core.adaptor.fulfillment.FulfillmentStatusAdaptor;
 import in.succinct.bpp.core.adaptor.fulfillment.FulfillmentStatusAdaptor.FulfillmentStatusAudit;
+import in.succinct.bpp.core.adaptor.payments.PaymentLinkGeneratorFactory;
 import in.succinct.bpp.core.db.model.LocalOrderSynchronizer;
 import in.succinct.bpp.core.db.model.LocalOrderSynchronizerFactory;
 import in.succinct.bpp.core.db.model.ProviderConfig.Serviceability;
@@ -1791,10 +1792,6 @@ public class ECommerceAdaptor extends SearchAdaptor {
             payment.setCollectedBy(CollectedBy.BAP);
             payment.setType(PaymentType.ON_ORDER);
         }
-        if (ObjectUtil.equals(payment.getCollectedBy(),CollectedBy.BPP) && !eCommerceOrder.isPaid()){
-            payment.setTlMethod("http/get");
-            payment.setUri(Config.instance().getServerBaseUrl()+"/html/payment.html");
-        }
         // Part of RSP Protocol!
         payment.setCollectedByStatus(NegotiationStatus.Agree);
         payment.setSettlementBasis(SettlementBasis.collection);
@@ -1851,7 +1848,11 @@ public class ECommerceAdaptor extends SearchAdaptor {
                 }
             }
         }
-
+        if (ObjectUtil.equals(payment.getCollectedBy(),CollectedBy.BPP) && !eCommerceOrder.isPaid()){
+            payment.setTlMethod("http/get");
+            payment.setUri(Config.instance().getServerBaseUrl()+"/html/payment.html");
+            PaymentLinkGeneratorFactory.getInstance().createGenerator(getSubscriber()).updatePaymentLink(payment);
+        }
     }
 
     private void setBilling(Order target, ShopifyOrder eCommerceOrder) {

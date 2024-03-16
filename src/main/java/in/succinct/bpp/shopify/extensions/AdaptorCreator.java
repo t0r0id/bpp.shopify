@@ -21,7 +21,7 @@ public class AdaptorCreator implements Extension {
         Map<String,String> properties = (Map<String,String>) context[0];
         Subscriber subscriber = (Subscriber) context[1];
         ObjectHolder<CommerceAdaptor> commerceAdaptorHolder = (ObjectHolder<CommerceAdaptor>) context[2];
-        if (properties.containsKey("in.succinct.bpp.shopify.storeUrl")){
+        if (properties.containsKey("in.succinct.bpp.shopify.provider.config")){
             commerceAdaptorHolder.set(getAdaptor(properties,subscriber)); // Adapator must be thread safe. No transactional private variables Config is ok;
         }
     }
