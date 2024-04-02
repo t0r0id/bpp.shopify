@@ -97,6 +97,7 @@ import in.succinct.beckn.User;
 import in.succinct.bpp.core.adaptor.TimeSensitiveCache;
 import in.succinct.bpp.core.adaptor.fulfillment.FulfillmentStatusAdaptor;
 import in.succinct.bpp.core.adaptor.fulfillment.FulfillmentStatusAdaptor.FulfillmentStatusAudit;
+import in.succinct.bpp.core.adaptor.payments.PaymentLinkGenerator;
 import in.succinct.bpp.core.adaptor.payments.PaymentLinkGeneratorFactory;
 import in.succinct.bpp.core.db.model.LocalOrderSynchronizer;
 import in.succinct.bpp.core.db.model.LocalOrderSynchronizerFactory;
@@ -320,7 +321,7 @@ public class ECommerceAdaptor extends SearchAdaptor {
                 setTest(true);
                 setKind("authorization");
                 setStatus("success");
-                setAmount(totalPrice.intValue());
+                setAmount(totalPrice.doubleValue());
             }});
         }
 
@@ -1851,7 +1852,10 @@ public class ECommerceAdaptor extends SearchAdaptor {
         if (ObjectUtil.equals(payment.getCollectedBy(),CollectedBy.BPP) && !eCommerceOrder.isPaid()){
             payment.setTlMethod("http/get");
             payment.setUri(Config.instance().getServerBaseUrl()+"/html/payment.html");
-            PaymentLinkGeneratorFactory.getInstance().createGenerator(getSubscriber()).updatePaymentLink(payment);
+            PaymentLinkGenerator plg = PaymentLinkGeneratorFactory.getInstance().createGenerator(getSubscriber());
+            if (plg != null) {
+                plg.updatePaymentLink(payment);
+            }
         }
     }
 
@@ -2266,7 +2270,7 @@ public class ECommerceAdaptor extends SearchAdaptor {
         fulfillment.setTracking(false);
         fulfillment.setCategory(getProviderConfig().getFulfillmentCategory().toString());
         fulfillment.setTAT(getProviderConfig().getFulfillmentTurnAroundTime());
-        fulfillment.setStart(new FulfillmentStop(JSONAwareWrapper.parse(lastKnownOrder.getFulfillment().getEnd().toString())));
+        fulfillment.setStart(new FulfillmentStop((JSONObject) JSONAwareWrapper.parse(lastKnownOrder.getFulfillment().getEnd().toString())));
 
         fulfillment.getStart().setTime(new Time());
         fulfillment.getStart().getTime().setRange(new Range());
@@ -2275,7 +2279,7 @@ public class ECommerceAdaptor extends SearchAdaptor {
         fulfillment.getStart().getTime().getRange().setEnd(DateUtils.addHours(fulfillment.getStart().getTime().getRange().getStart(), (int) Duration.parse(ttl_reverseqc.getValue()).toHours()));
 
 
-        fulfillment.setEnd(new FulfillmentStop(JSONAwareWrapper.parse(lastKnownOrder.getFulfillment().getStart().toString())));
+        fulfillment.setEnd(new FulfillmentStop((JSONObject) JSONAwareWrapper.parse(lastKnownOrder.getFulfillment().getStart().toString())));
         fulfillment.getEnd().setTime(new Time());
         fulfillment.getEnd().getTime().setRange(new Range());
         fulfillment.getEnd().getTime().getRange().setStart(fulfillment.getStart().getTime().getRange().getStart());
