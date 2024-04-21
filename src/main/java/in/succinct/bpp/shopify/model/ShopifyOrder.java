@@ -8,7 +8,6 @@ import com.venky.swf.db.Database;
 import com.venky.swf.plugins.collab.db.model.config.City;
 import com.venky.swf.plugins.collab.db.model.config.Country;
 import com.venky.swf.plugins.collab.db.model.config.State;
-import com.venky.swf.routing.Config;
 import in.succinct.beckn.BecknObject;
 import in.succinct.beckn.BecknObjects;
 import in.succinct.beckn.BecknObjectsWithId;
@@ -295,6 +294,13 @@ public class ShopifyOrder extends ShopifyObjectWithId {
         set("total_price",total_price);
     }
 
+    public double getCurrentTotalPrice(){
+        return getDouble("current_total_price");
+    }
+    public void setCurrentTotalPrice(double current_total_price){
+        set("current_total_price",current_total_price);
+    }
+
     public double getTotalWeight(){
         return getDouble("total_weight");
     }
@@ -526,32 +532,28 @@ public class ShopifyOrder extends ShopifyObjectWithId {
             terms.setAmount(shopifyOrder.getTotalPrice());
             terms.setPaymentSchedules(new PaymentSchedules());
         }
-        double toPay = terms.getAmount();
-
-        if ("paid".equals(shopifyOrder.getFinancialStatus())){
-            if (Config.instance().isDevelopmentEnvironment()) {
-                if (shopifyOrder.getTransactions() != null) {
-                    Bucket paid = new Bucket();
-                    for (Transaction t : shopifyOrder.getTransactions()) {
-                        if (t.isTest() && ObjectUtil.equals("capture", t.getKind())) {
-                            paid.increment(t.getAmount());
-                        }
-                    }
-                    return DoubleUtils.compareTo(paid.doubleValue(),toPay) >= 0;
-                }
-                return false;
-            }
-            return true;
-        }
-
         PaymentSchedules schedules = terms.getPaymentSchedules();
         Bucket paid  = new Bucket();
+        Bucket toPay = new Bucket(terms.getAmount());
+        if (shopifyOrder.getTransactions() != null) {
+            for (Transaction t : shopifyOrder.getTransactions()) {
+                if (ObjectUtil.equals("capture", t.getKind())) {
+                    paid.increment(t.getAmount());
+                } else if (ObjectUtil.equals("sale", t.getKind())) {
+                    paid.increment(t.getAmount());
+                } else if (ObjectUtil.equals("refund", t.getKind())) {
+                    toPay.decrement(t.getAmount());
+                }
+            }
+        }
+        /*
         for (PaymentSchedule schedule : schedules){
             if (schedule.getCompletedAt() != null ) {
                 paid.increment(schedule.getAmount());
             }
         }
-        return DoubleUtils.compareTo(paid.doubleValue(), toPay)>= 0;
+        */
+        return DoubleUtils.compareTo(paid.doubleValue(), toPay.doubleValue())>= 0;
     }
 
     public void loadMetaFields(ECommerceSDK helper) {
